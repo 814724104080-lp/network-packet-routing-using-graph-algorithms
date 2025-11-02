@@ -1,0 +1,87 @@
+import heapq
+
+def dijkstra(graph, start_node, end_node):
+    """
+    Finds the shortest path from start_node to end_node in a weighted graph 
+    using Dijkstra's algorithm.
+    """
+    # Initialize distances: 0 for start, infinity for others
+    distances = {node: float('inf') for node in graph}
+    distances[start_node] = 0
+    
+    # Priority queue stores (distance, node)
+    priority_queue = [(0, start_node)]
+    
+    # To reconstruct the path
+    previous_nodes = {node: None for node in graph}
+
+    print(f"Starting routing from **{start_node}** to **{end_node}**...")
+
+    while priority_queue:
+        # Get the unvisited node with the smallest known distance
+        current_distance, current_node = heapq.heappop(priority_queue)
+
+        # Optimization: if the distance pulled from the heap is greater than
+        # the known shortest distance, skip it (it's an outdated entry).
+        if current_distance > distances[current_node]:
+            continue
+
+        # Target reached
+        if current_node == end_node:
+            break
+        
+        # Explore neighbors
+        for neighbor, weight in graph[current_node].items():
+            distance = current_distance + weight
+
+            # If a shorter path to the neighbor is found
+            if distance < distances[neighbor]:
+                distances[neighbor] = distance
+                previous_nodes[neighbor] = current_node
+                heapq.heappush(priority_queue, (distance, neighbor))
+                
+    # Reconstruct the shortest path
+    path = []
+    current = end_node
+    while current is not None:
+        path.append(current)
+        current = previous_nodes[current]
+        if current == start_node:
+             path.append(current)
+             break
+
+    # If the start node was not the end node and the path length is 1, it means no path was found
+    if not path or (len(path) == 1 and path[0] != start_node):
+        return float('inf'), []
+        
+    return distances[end_node], path[::-1] # Path is reversed
+
+# --- Example Network Setup ---
+# The graph is represented as an adjacency list dictionary: 
+# {Router_A: {Router_B: Cost, Router_C: Cost}, ...}
+network_graph = {
+    'A': {'B': 5, 'C': 1},
+    'B': {'D': 3, 'E': 4},
+    'C': {'B': 2, 'D': 8},
+    'D': {'F': 3},
+    'E': {'D': 1, 'F': 6},
+    'F': {} # Destination router
+}
+
+# --- Routing Simulation ---
+source = 'A'
+destination = 'F'
+
+# Run the algorithm
+shortest_distance, shortest_path = dijkstra(network_graph, source, destination)
+
+# --- Output the Result ---
+print("-" * 30)
+if shortest_path:
+    print(f"✅ Packet Routing Successful!")
+    print(f"   **Source:** {source}")
+    print(f"   **Destination:** {destination}")
+    print(f"   **Shortest Path (Next-Hop Sequence):** {' -> '.join(shortest_path)}")
+    print(f"   **Total Cost/Metric:** {shortest_distance}")
+else:
+    print(f"❌ No path found from {source} to {destination}")
